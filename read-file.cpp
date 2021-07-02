@@ -101,31 +101,24 @@ void download(const std::string& url) {
         outfile.write(&buf[0], BUF_SIZE);
         usleep(sleeptime);
         ret = fread(buf.data(), BUF_SIZE, 1, file);
-        printf("ret %d\n", ret);
+        //printf("ret %d\n", ret);
     }
+
+        ret = fread(buf.data(), BUF_SIZE, 1, file);
+    outfile.write(&buf[0], BUF_SIZE);
+    outfile << std::endl;
+        //usleep(sleeptime);
+        //ret = fread(buf.data(), BUF_SIZE, 1, file);
+        //printf("ret %d\n", ret);
+        //ret = fread(buf.data(), BUF_SIZE, 1, file);
 
     //char simplebuf[1024] = {0, };
     //ret = fread(simplebuf, BUF_SIZE, 1, file);
     //printf("simplebuf '%s'\n", simplebuf);
 
-    /*
-     *sleep(sleeptime);
-     *ret = fread(&buf[0], BUF_SIZE, 1, file);
-     *sleep(sleeptime);
-     *ret = fread(&buf[0], BUF_SIZE, 1, file);
-     *sleep(sleeptime);
-     *ret = fread(&buf[0], BUF_SIZE, 1, file);
-     */
-
-    outfile << "textxtetx" << std::endl;
-    //outfile << buf << std::endl;
-    outfile << "textxtetx" << std::endl;
-
-    printf("ret %ld\n", ret);
-
     // XXX нет проверки на переполнение знакового значения
-    printf("filesize %d\n", (int)filesize);
-    //fclose(file);
+    //printf("filesize %d\n", (int)filesize);
+    
     pclose(file);
 }
 
