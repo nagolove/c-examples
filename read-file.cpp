@@ -66,15 +66,16 @@
 
 const uint32_t BUF_SIZE = 1024;
 const char *OUT_FNAME = "data.txt";
+const int sleeptime = 2;
 
-void download() {
-    //FILE* file = popen("wget -r -np -A .txt http://www.hackershandbook.org/1000/","r");
-    //FILE* file = popen("curl http://az.lib.ru/f/fet_a_a/text_0042.shtml", "rw");
-    FILE *file = popen("curl http://az.lib.ru/f/fet_a_a/text_0042.shtml", "r");
-    //std::vector<uint8_t> buf;
-    std::string buf;
+/*
+ * Скачивает текстовый файл из интернета и возвращает в виде строки символов.
+ */
+void download(const std::string& url) {
+    FILE *file = popen(url.c_str(), "r");
+    std::vector<char> buf;
+    //std::string buf;
     buf.reserve(BUF_SIZE);
-    //fread(
     printf("file %p\n", file);
     auto filesize = ftell(file);
 
@@ -86,19 +87,38 @@ void download() {
         throw std::runtime_error(msg);
     }
 
-    int sleeptime = 2;
     size_t ret = 0;
-    sleep(sleeptime);
-    ret = fread(&buf[0], BUF_SIZE, 1, file);
-    sleep(sleeptime);
-    ret = fread(&buf[0], BUF_SIZE, 1, file);
-    sleep(sleeptime);
-    ret = fread(&buf[0], BUF_SIZE, 1, file);
-    sleep(sleeptime);
-    ret = fread(&buf[0], BUF_SIZE, 1, file);
+
+    usleep(sleeptime);
+    ret = fread(buf.data(), BUF_SIZE, 1, file);
+
+    // Цикл чтения и ожидания
+    //do {
+        //outfile.write(&buf[0], BUF_SIZE);
+        //printf("ret %d\n", ret);
+    //} while (ret != 0);
+    while (ret != 0) {
+        outfile.write(&buf[0], BUF_SIZE);
+        usleep(sleeptime);
+        ret = fread(buf.data(), BUF_SIZE, 1, file);
+        printf("ret %d\n", ret);
+    }
+
+    //char simplebuf[1024] = {0, };
+    //ret = fread(simplebuf, BUF_SIZE, 1, file);
+    //printf("simplebuf '%s'\n", simplebuf);
+
+    /*
+     *sleep(sleeptime);
+     *ret = fread(&buf[0], BUF_SIZE, 1, file);
+     *sleep(sleeptime);
+     *ret = fread(&buf[0], BUF_SIZE, 1, file);
+     *sleep(sleeptime);
+     *ret = fread(&buf[0], BUF_SIZE, 1, file);
+     */
 
     outfile << "textxtetx" << std::endl;
-    outfile << buf << std::endl;
+    //outfile << buf << std::endl;
     outfile << "textxtetx" << std::endl;
 
     printf("ret %ld\n", ret);
@@ -110,6 +130,6 @@ void download() {
 }
 
 int main() {
-    download();
+    download("curl http://az.lib.ru/f/fet_a_a/text_0042.shtml");
     return EXIT_SUCCESS;
 }
