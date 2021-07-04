@@ -2,6 +2,7 @@
 #include <any>
 #include <array>
 #include <atomic>
+//#include <bits/stdc++.h>
 #include <bitset>
 #include <cassert>
 #include <cassert>
@@ -63,16 +64,30 @@
 #include <vector>
 
 #include <unistd.h>
+#include <sys/stat.h>
 
 const uint32_t BUF_SIZE = 1024;
 const char *OUT_FNAME = "data.txt";
 const int sleeptime = 2;
 const int pipeReadDelay = 100;
 
+bool isFileExist(const std::string &fname) {
+    return false;
+}
+
+/*
+
+FILE *stream = fopen("somefname.txt", "r");
+int fd = fileno(stream);
+
+*/
+
+
 /*
  * Пропускает databuf через команду используя трубу. Возвращает вывод команды в
  * виде строки.
  */
+// TODO в случае ошибки должен кидать исключение
 std::string passThroughPipe(const std::string& command, const std::string& databuf) {
 
     FILE *file = popen(command.c_str(), "wr");
@@ -171,6 +186,7 @@ const uint BLOCK_SIZE = 8;
 // Считывает содержимое файла в память и возвращает строковый объекта. В случае
 // ошибки бросает исключение std::exception
 std::string read2mem(const std::string& fname) {
+    size_t ret = 0;
     FILE *file = fopen(fname.c_str(), "r");
     std::string buf, resbuf;
     buf.reserve(BLOCK_SIZE);
@@ -181,45 +197,70 @@ std::string read2mem(const std::string& fname) {
         throw std::runtime_error("Could not read file " + fname);
     }
 
-    size_t ret = 0;
+    // TODO добавить проверку на считывание маленького куска
     ret = fread(buf.data(), 1, BLOCK_SIZE, file);
 
-    // TODO обработка ferror()
     while (ret > 0) {
         //std::string oldbuf(buf);
         resbuf.append(buf);
         ret = fread(buf.data(), 1, BLOCK_SIZE, file);
-        printf("buf '%s', ret = %lu\n", buf.c_str(), ret);
+        if (ret > 0)
+            buf.resize(ret);
+        //printf("buf '%s', ret = %lu\n", buf.c_str(), ret);
     }
 
     if (ferror(file) != 0) {
         fclose(file);
-        throw std::runtime_error("ferror() got non zero");
-    }
-
-    if (ret < BLOCK_SIZE) {
-        resbuf.append(buf, ret);
-        printf("additional append.\n");
+        throw std::runtime_error("ferror() got non zero on " + fname);
     }
 
     fclose(file);
     return resbuf;
 }
 
-int main() {
+void test_read2mem() {
+    std::string data;
+    data = read2mem("t1.txt");
+    printf("data '%s'\n", data.c_str());
+
+    data = read2mem("t2.txt");
+    printf("data '%s'\n", data.c_str());
+
+    data = read2mem("data-min.txt");
+    printf("data '%s'\n", data.c_str());
+
+    // этот пример не работает
+    //data = read2mem("simpledata.txt");
+    printf("data '%s'\n", data.c_str());
+}
+
+void test_passThroughPipe() {
+    //TODO put some code here ..
+    //std::string buf;
+    //auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
+}
+
+void test_download() {
+    //download("curl http://az.lib.ru/f/fet_a_a/text_0042.shtml");
+}
+
+// FIXME не работает
+void decodeCMD(int argc, const char **argv) {
+    printf("argc %d\n", argc);
+    for (int i = argc - 0; i >= 0; --i) {
+        printf("i = %d, str = %s\n", i, argv[i]);
+        printf("%s\n", argv[i]);
+    }
+}
+
+int main(int argc, const char **argv) {
     try {
 
-        //download("curl http://az.lib.ru/f/fet_a_a/text_0042.shtml");
+        decodeCMD(argc, argv);
 
-        //std::string buf;
-        //auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
-
-        auto data2 = read2mem("t2.txt");
-        printf("data '%s'\n", data2.c_str());
-
-        auto data = read2mem("t1.txt");
-        printf("data '%s'\n", data.c_str());
-
+        //test_read2mem();
+        //test_passThroughPipe();
+        //test_download();
 
     } catch (const std::overflow_error& e) {
         // this executes if f() throws std::overflow_error (same type rule)
