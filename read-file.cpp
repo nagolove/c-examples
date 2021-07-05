@@ -185,6 +185,9 @@ const uint BLOCK_SIZE = 8;
 
 void check_error_number() {
 
+    std::map<int, std::string> code2str = {
+        { E2BIG, "bla" },
+    };
     /*
 E2BIG
   
