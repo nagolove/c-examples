@@ -271,7 +271,7 @@ std::string check_error_number(int n, bool *found = nullptr) {
     if (search == code2str.end()) {
         if (found)
             *found = false;
-        return std::string("Error code not found.");
+        return std::string("Error code not found: " + std::to_string(n));
     } else {
         if (found)
             *found = true;
@@ -298,62 +298,89 @@ void check_error() {
     }
 }
 
+#define PRINT_ERROR_CODE    (printf("%s\n", check_error_number(errno).c_str()))
+
 // TODO проверить ошибки считывания последнего кусочка файла
 // Считывает содержимое файла в память и возвращает строковый объекта. В случае
 // ошибки бросает исключение std::exception
 std::string read2mem(const std::string& fname) {
+
+    PRINT_ERROR_CODE;
+    check_error_number(errno);
+
     size_t ret = 0;
     FILE *file = fopen(fname.c_str(), "r");
+
+    check_error_number(errno);
+
     std::string buf, resbuf;
     buf.reserve(BLOCK_SIZE);
     buf.resize(BLOCK_SIZE);
+
+    check_error_number(errno);
 
     if (file == nullptr || ferror(file) != 0) {
         fclose(file);
         throw std::runtime_error("Could not read file " + fname);
     }
 
+    check_error_number(errno);
+
     // TODO добавить проверку на считывание маленького куска
     ret = fread(buf.data(), 1, BLOCK_SIZE, file);
+
+    check_error_number(errno);
 
     while (ret > 0) {
         //std::string oldbuf(buf);
         resbuf.append(buf);
         ret = fread(buf.data(), 1, BLOCK_SIZE, file);
+
+        check_error_number(errno);
+
         if (ret > 0)
             buf.resize(ret);
         //printf("buf '%s', ret = %lu\n", buf.c_str(), ret);
+        
+        check_error_number(errno);
     }
 
+    check_error_number(errno);
+
     if (ferror(file) != 0) {
+        check_error_number(errno);
         fclose(file);
         throw std::runtime_error("ferror() got non zero on " + fname);
     }
 
+    check_error_number(errno);
     fclose(file);
+    check_error_number(errno);
+
     return resbuf;
 }
 
+#undef PRINT_ERROR_CODE
+
 void test_read2mem() {
 
-    check_error();
+    //check_error();
 
-        /*
     std::string data;
     data = read2mem("t1.txt");
-    printf("data '%s'\n", data.c_str());
+    //printf("data '%s'\n", data.c_str());
 
     data = read2mem("t2.txt");
-    printf("data '%s'\n", data.c_str());
+    //printf("data '%s'\n", data.c_str());
 
     data = read2mem("data-min.txt");
-    printf("data '%s'\n", data.c_str());
+    //printf("data '%s'\n", data.c_str());
 
     // FIXME
     // этот пример не работает
-    //data = read2mem("simpledata.txt");
-    data = read2mem("simpledata-half.txt");
-    printf("data '%s'\n", data.c_str());
+    data = read2mem("simpledata.txt");
+    //data = read2mem("simpledata-half.txt");
+    //printf("data '%s'\n", data.c_str());
 
     // */
 }
