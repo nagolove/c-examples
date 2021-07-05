@@ -1,7 +1,17 @@
 #HEADERS = read-file.cpp
+EXEPATH=bin
+
+##CC=gcc
+#CC=clang-7
+#FLAGS=-ggdb -std=c11 -pedantic
+
+#all:
+	#${CC} ${FLAGS} -c run.c
+	#${CC} ${FLAGS} -c inc.c
+	#${CC} ${FLAGS} -o run run.o inc.o
 
 default: 
-	gcc read-file.cpp -o readfile -ggdb -Wall -std=c++17 -lm -lstdc++
+	gcc read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++
 	#strip readfile
 
 #program.o: program.c $(HEADERS)

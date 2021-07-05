@@ -280,8 +280,9 @@ std::string check_error_number(int n, bool *found = nullptr) {
 
 void check_error() {
     double somenumber = std::log(8);
+    printf("%f\n", somenumber + 1);
 
-    printf("error number: %lu\n", check_error_number(errno));
+    printf("error str: %s\n", check_error_number(errno).c_str());
 
     std::cout << "errno " << errno << '\n';
     std::cout << "strerror() before nan: " << std::strerror(errno) << '\n';
@@ -335,27 +336,34 @@ std::string read2mem(const std::string& fname) {
 
     fseek(file, 0, SEEK_END);
     auto fullsize = ftell(file);
-    printf("fullsize: %d\n", fullsize);
+    printf("fullsize: %ld\n", fullsize);
     fseek(file, 0, SEEK_SET);
 
     while (ret > 0) {
         printf("i %d\n", i++);
         //std::string oldbuf(buf);
+        printf("1.\n");
         resbuf.append(buf);
+        printf("2.\n");
         ret = fread(buf.data(), 1, BLOCK_SIZE, file);
+        printf("3.\n");
 
         //auto size = ftell(file);
         //printf("size %d\n", size);
 
         check_error_number(errno);
+        printf("4.\n");
 
         if (ret > 0)
             buf.resize(ret);
+        printf("5.\n");
         //printf("buf '%s', ret = %lu\n", buf.c_str(), ret);
         
         check_error_number(errno);
+        printf("6.\n");
     }
 
+    printf("6.\n");
     check_error_number(errno);
 
     if (ferror(file) != 0) {
@@ -378,18 +386,19 @@ void test_read2mem() {
     //check_error();
 
     std::string data;
-    data = read2mem("t1.txt");
+    //data = read2mem("t1.txt");
     //printf("data '%s'\n", data.c_str());
 
-    data = read2mem("t2.txt");
+    data = read2mem("t3.txt");
     //printf("data '%s'\n", data.c_str());
 
-    data = read2mem("data-min.txt");
+    //data = read2mem("data-min.txt");
     //printf("data '%s'\n", data.c_str());
 
     // FIXME
     // этот пример не работает
-    data = read2mem("simpledata.txt");
+    //data = read2mem("simpledata.txt");
+    //read2mem("simpledata.txt");
     //data = read2mem("simpledata-half.txt");
     //printf("data '%s'\n", data.c_str());
 
