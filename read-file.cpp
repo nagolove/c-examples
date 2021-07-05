@@ -83,7 +83,6 @@ int fd = fileno(stream);
 
 */
 
-
 /*
  * Пропускает databuf через команду используя трубу. Возвращает вывод команды в
  * виде строки.
@@ -331,10 +330,21 @@ std::string read2mem(const std::string& fname) {
 
     check_error_number(errno);
 
+    int i = 0;
+
+    fseek(file, 0, SEEK_END);
+    auto fullsize = ftell(file);
+    printf("fullsize: %d\n", fullsize);
+    fseek(file, 0, SEEK_SET);
+
     while (ret > 0) {
+        printf("i %d\n", i++);
         //std::string oldbuf(buf);
         resbuf.append(buf);
         ret = fread(buf.data(), 1, BLOCK_SIZE, file);
+
+        //auto size = ftell(file);
+        //printf("size %d\n", size);
 
         check_error_number(errno);
 
