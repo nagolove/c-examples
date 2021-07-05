@@ -281,11 +281,12 @@ std::string check_error_number(int n, bool *found = nullptr) {
 void check_error() {
     double somenumber = std::log(8);
 
-    printf("error number: %d\n", check_error_number(errno));
+    printf("error number: %lu\n", check_error_number(errno));
 
     std::cout << "errno " << errno << '\n';
     std::cout << "strerror() before nan: " << std::strerror(errno) << '\n';
     double nan = std::log(-1.0);
+    printf("nan %f]\n", nan);
     std::cout << "errno after " << errno << '\n';
     std::cout << "code2str() after " << check_error_number(errno) << '\n';
     if (errno == EDOM) {

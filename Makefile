@@ -2,6 +2,7 @@
 
 default: 
 	gcc read-file.cpp -o readfile -ggdb -Wall -std=c++17 -lm -lstdc++
+	#strip readfile
 
 #program.o: program.c $(HEADERS)
 #program.o: program.c
