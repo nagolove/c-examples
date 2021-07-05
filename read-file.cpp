@@ -314,13 +314,17 @@ std::string read2mem(const std::string& fname) {
 
     check_error_number(errno);
 
-    std::string buf, resbuf;
-    buf.reserve(BLOCK_SIZE);
-    buf.resize(BLOCK_SIZE);
+    char buf[BLOCK_SIZE + 1] = {0, };
+    //std::string buf, resbuf;
+    std::string resbuf;
+    //buf.reserve(BLOCK_SIZE);
+    //buf.resize(BLOCK_SIZE);
 
     check_error_number(errno);
 
-    if (file == nullptr || ferror(file) != 0) {
+    //if (file == nullptr || ferror(file) != 0) {
+    printf("file %p\n", file);
+    if (file == nullptr && ferror(file) != 0) {
         fclose(file);
         throw std::runtime_error("Could not read file " + fname);
     }
@@ -328,7 +332,7 @@ std::string read2mem(const std::string& fname) {
     check_error_number(errno);
 
     // TODO добавить проверку на считывание маленького куска
-    ret = fread(buf.data(), 1, BLOCK_SIZE, file);
+    ret = fread(buf, 1, BLOCK_SIZE, file);
 
     check_error_number(errno);
 
@@ -345,7 +349,7 @@ std::string read2mem(const std::string& fname) {
         printf("1.\n");
         resbuf.append(buf);
         printf("2.\n");
-        ret = fread(buf.data(), 1, BLOCK_SIZE, file);
+        ret = fread(buf, 1, BLOCK_SIZE, file);
         printf("3.\n");
 
         //auto size = ftell(file);
@@ -354,8 +358,9 @@ std::string read2mem(const std::string& fname) {
         check_error_number(errno);
         printf("4.\n");
 
-        if (ret > 0)
-            buf.resize(ret);
+        //if (ret > 0)
+            //buf.resize(ret);
+
         printf("5.\n");
         //printf("buf '%s', ret = %lu\n", buf.c_str(), ret);
         
@@ -390,7 +395,7 @@ void test_read2mem() {
     //printf("data '%s'\n", data.c_str());
 
     data = read2mem("t3.txt");
-    //printf("data '%s'\n", data.c_str());
+    printf("data '%s'\n", data.c_str());
 
     //data = read2mem("data-min.txt");
     //printf("data '%s'\n", data.c_str());
