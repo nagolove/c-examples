@@ -183,328 +183,112 @@ void download(const std::string& url) {
 //const uint BLOCK_SIZE = 1024 * 1000;
 const uint BLOCK_SIZE = 8;
 
-void check_error_number() {
+std::string check_error_number(int n, bool *found = nullptr) {
 
-    std::map<int, std::string> code2str = {
+    const std::map<int, std::string> code2str = {
         { E2BIG, "bla" },
+        { E2BIG, "Argument list too long" },
+        { EACCES, "Permission denied "},
+        { EADDRINUSE, "Address in use" },
+        { EADDRNOTAVAIL, "Address not available"},
+        { EAFNOSUPPORT, "Address family not supported"},
+        { EAGAIN, "Resource unavailable, try again"},
+        { EALREADY, "Connection already in progress"},
+        { EBADF, "Bad file descriptor",},
+        { EBADMSG, "Bad message",},
+        { EBUSY, "Device or resource busy"},
+        { ECANCELED, "Operation canceled"},
+        { ECHILD, "No child processes"},
+        { ECONNABORTED, "Connection aborted"},
+        { ECONNREFUSED, "Connection refused"},
+        { ECONNRESET, "Connection reset"},
+        { EDEADLK, "Resource deadlock would occur"},
+        { EDESTADDRREQ, "Destination address required"},
+        { EDOM, "Mathematics argument out of domain of function"},
+        { EEXIST, "File exists"},
+        { EFAULT, "Bad address"},
+        { EFBIG, "File too large"},
+        { EHOSTUNREACH, "Host is unreachable"},
+        { EIDRM, "Identifier removed"},
+        { EILSEQ, "Illegal byte sequence"},
+        { EINPROGRESS, "Operation in progress"},
+        { EINTR, "Interrupted function"},
+        { EINVAL, "Invalid argument"},
+        { EIO, "I/O error"},
+        { EISCONN, "Socket is connected"},
+        { EISDIR, "Is a directory"},
+        { ELOOP, "Too many levels of symbolic links"},
+        { EMFILE, "File descriptor value too large"},
+        { EMLINK, "Too many links"},
+        { EMSGSIZE, "Message too large"},
+        { ENAMETOOLONG, "Filename too long"},
+        { ENETDOWN, "Network is down"},
+        { ENETRESET, "Connection aborted by network"},
+        { ENETUNREACH, "Network unreachable"},
+        { ENFILE, "Too many files open in system"},
+        { ENOBUFS, "No buffer space available"},
+        { ENODATA, "No message is available on the STREAM head read queue"},
+        { ENODEV, "No such device"},
+        { ENOENT, "No such file or directory"},
+        { ENOEXEC, "Executable file format error"},
+        { ENOLCK, "No locks available"},
+        { ENOLINK, "Link has been severed"},
+        { ENOMEM, "Not enough space"},
+        { ENOMSG, "No message of the desired type"},
+        { ENOPROTOOPT, "Protocol not available"},
+        { ENOSPC, "No space left on device"},
+        { ENOSR, "No STREAM resources"},
+        { ENOSTR, "Not a STREAM"},
+        { ENOSYS, "Function not supported"},
+        { ENOTCONN, "The socket is not connected"},
+        { ENOTDIR, "Not a directory"},
+        { ENOTEMPTY, "Directory not empty"},
+        { ENOTRECOVERABLE, "State not recoverable"},
+        { ENOTSOCK, "Not a socket"},
+        { ENOTSUP, "Not supported"},
+        { ENOTTY, "Inappropriate I/O control operation"},
+        { ENXIO, "No such device or address"},
+        { EOPNOTSUPP, "Operation not supported on socket"},
+        { EOVERFLOW, "Value too large to be stored in data type"},
+        { EOWNERDEAD, "Previous owner died"},
+        { EPERM, "Operation not permitted"},
+        { EPIPE, "Broken pipe"},
+        { EPROTO, "Protocol error"},
+        { EPROTONOSUPPORT, "Protocol not supported"},
+        { EPROTOTYPE, "Protocol wrong type for socket"},
+        { ERANGE, "Result too large"},
+        { EROFS, "Read-only file system"},
+        { ESPIPE, "Invalid seek"},
+        { ESRCH, "No such process"},
+        { ETIME, "Stream ioctl() timeout"},
+        { ETIMEDOUT, "Connection timed out"},
+        { ETXTBSY, "Text file busy"},
+        { EWOULDBLOCK, "Operation would block"},
+        { EXDEV, "Cross-device link"}, 
     };
-    /*
-E2BIG
-  
-Argument list too long
-(macro constant)
-EACCES
-  
-Permission denied
-(macro constant)
-EADDRINUSE
-  
-Address in use
-(macro constant)
-EADDRNOTAVAIL
-  
-Address not available
-(macro constant)
-EAFNOSUPPORT
-  
-Address family not supported
-(macro constant)
-EAGAIN
-  
-Resource unavailable, try again
-(macro constant)
-EALREADY
-  
-Connection already in progress
-(macro constant)
-EBADF
-  
-Bad file descriptor
-(macro constant)
-EBADMSG
-  
-Bad message
-(macro constant)
-EBUSY
-  
-Device or resource busy
-(macro constant)
-ECANCELED
-  
-Operation canceled
-(macro constant)
-ECHILD
-  
-No child processes
-(macro constant)
-ECONNABORTED
-  
-Connection aborted
-(macro constant)
-ECONNREFUSED
-  
-Connection refused
-(macro constant)
-ECONNRESET
-  
-Connection reset
-(macro constant)
-EDEADLK
-  
-Resource deadlock would occur
-(macro constant)
-EDESTADDRREQ
-  
-Destination address required
-(macro constant)
-EDOM
- 
-Mathematics argument out of domain of function
-(macro constant)
-EEXIST
-  
-File exists
-(macro constant)
-EFAULT
-  
-Bad address
-(macro constant)
-EFBIG
-  
-File too large
-(macro constant)
-EHOSTUNREACH
-  
-Host is unreachable
-(macro constant)
-EIDRM
-  
-Identifier removed
-(macro constant)
-EILSEQ
-  
-Illegal byte sequence
-(macro constant)
-EINPROGRESS
-  
-Operation in progress
-(macro constant)
-EINTR
-  
-Interrupted function
-(macro constant)
-EINVAL
-  
-Invalid argument
-(macro constant)
-EIO
-  
-I/O error
-(macro constant)
-EISCONN
-  
-Socket is connected
-(macro constant)
-EISDIR
-  
-Is a directory
-(macro constant)
-ELOOP
-  
-Too many levels of symbolic links
-(macro constant)
-EMFILE
-  
-File descriptor value too large
-(macro constant)
-EMLINK
-  
-Too many links
-(macro constant)
-EMSGSIZE
-  
-Message too large
-(macro constant)
-ENAMETOOLONG
-  
-Filename too long
-(macro constant)
-ENETDOWN
-  
-Network is down
-(macro constant)
-ENETRESET
-  
-Connection aborted by network
-(macro constant)
-ENETUNREACH
-  
-Network unreachable
-(macro constant)
-ENFILE
-  
-Too many files open in system
-(macro constant)
-ENOBUFS
-  
-No buffer space available
-(macro constant)
-ENODATA
-  
-No message is available on the STREAM head read queue
-(macro constant)
-ENODEV
-  
-No such device
-(macro constant)
-ENOENT
-  
-No such file or directory
-(macro constant)
-ENOEXEC
-  
-Executable file format error
-(macro constant)
-ENOLCK
-  
-No locks available
-(macro constant)
-ENOLINK
-  
-Link has been severed
-(macro constant)
-ENOMEM
-  
-Not enough space
-(macro constant)
-ENOMSG
-  
-No message of the desired type
-(macro constant)
-ENOPROTOOPT
-  
-Protocol not available
-(macro constant)
-ENOSPC
-  
-No space left on device
-(macro constant)
-ENOSR
-  
-No STREAM resources
-(macro constant)
-ENOSTR
-  
-Not a STREAM
-(macro constant)
-ENOSYS
-  
-Function not supported
-(macro constant)
-ENOTCONN
-  
-The socket is not connected
-(macro constant)
-ENOTDIR
-  
-Not a directory
-(macro constant)
-ENOTEMPTY
-  
-Directory not empty
-(macro constant)
-ENOTRECOVERABLE
-  
-State not recoverable
-(macro constant)
-ENOTSOCK
-  
-Not a socket
-(macro constant)
-ENOTSUP
-  
-Not supported
-(macro constant)
-ENOTTY
-  
-Inappropriate I/O control operation
-(macro constant)
-ENXIO
-  
-No such device or address
-(macro constant)
-EOPNOTSUPP
-  
-Operation not supported on socket
-(macro constant)
-EOVERFLOW
-  
-Value too large to be stored in data type
-(macro constant)
-EOWNERDEAD
-  
-Previous owner died
-(macro constant)
-EPERM
-  
-Operation not permitted
-(macro constant)
-EPIPE
-  
-Broken pipe
-(macro constant)
-EPROTO
-  
-Protocol error
-(macro constant)
-EPROTONOSUPPORT
-  
-Protocol not supported
-(macro constant)
-EPROTOTYPE
-  
-Protocol wrong type for socket
-(macro constant)
-ERANGE
- 
-Result too large
-(macro constant)
-EROFS
-  
-Read-only file system
-(macro constant)
-ESPIPE
-  
-Invalid seek
-(macro constant)
-ESRCH
-  
-No such process
-(macro constant)
-ETIME
-  
-Stream ioctl() timeout
-(macro constant)
-ETIMEDOUT
-  
-Connection timed out
-(macro constant)
-ETXTBSY
-  
-Text file busy
-(macro constant)
-EWOULDBLOCK
-  
-Operation would block
-(macro constant)
-EXDEV
-*/
+
+    auto search = code2str.find(n);
+    if (search == code2str.end()) {
+        if (found)
+            *found = false;
+        return std::string("Error code not found.");
+    } else {
+        if (found)
+            *found = true;
+        return search->second;
+    }
+}
 
 void check_error() {
     double somenumber = std::log(8);
+
+    printf("error number: %d\n", check_error_number(errno));
+
     std::cout << "errno " << errno << '\n';
     std::cout << "strerror() before nan: " << std::strerror(errno) << '\n';
     double nan = std::log(-1.0);
+    std::cout << "errno after " << errno << '\n';
+    std::cout << "code2str() after " << check_error_number(errno) << '\n';
     if (errno == EDOM) {
         std::cout << "log(-1) failed: " << std::strerror(errno) << '\n';
         std::setlocale(LC_MESSAGES, "de_DE.utf8");
