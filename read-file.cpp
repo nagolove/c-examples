@@ -96,12 +96,147 @@ public:
 //}}}
 
 /*
+ * Возвращает строку с описанием ошибки по номеру. Дополнительный параметр -
+ * флаг, указывающий на найдена-ли строка с ошибкой.
+ */
+std::string make_error_string(int n, bool *found = nullptr) {
+    //{{{
+
+    //{{{
+    const std::map<int, std::string> code2str = {
+        { E2BIG, "bla" },
+        { E2BIG, "Argument list too long" },
+        { EACCES, "Permission denied "},
+        { EADDRINUSE, "Address in use" },
+        { EADDRNOTAVAIL, "Address not available"},
+        { EAFNOSUPPORT, "Address family not supported"},
+        { EAGAIN, "Resource unavailable, try again"},
+        { EALREADY, "Connection already in progress"},
+        { EBADF, "Bad file descriptor",},
+        { EBADMSG, "Bad message",},
+        { EBUSY, "Device or resource busy"},
+        { ECANCELED, "Operation canceled"},
+        { ECHILD, "No child processes"},
+        { ECONNABORTED, "Connection aborted"},
+        { ECONNREFUSED, "Connection refused"},
+        { ECONNRESET, "Connection reset"},
+        { EDEADLK, "Resource deadlock would occur"},
+        { EDESTADDRREQ, "Destination address required"},
+        { EDOM, "Mathematics argument out of domain of function"},
+        { EEXIST, "File exists"},
+        { EFAULT, "Bad address"},
+        { EFBIG, "File too large"},
+        { EHOSTUNREACH, "Host is unreachable"},
+        { EIDRM, "Identifier removed"},
+        { EILSEQ, "Illegal byte sequence"},
+        { EINPROGRESS, "Operation in progress"},
+        { EINTR, "Interrupted function"},
+        { EINVAL, "Invalid argument"},
+        { EIO, "I/O error"},
+        { EISCONN, "Socket is connected"},
+        { EISDIR, "Is a directory"},
+        { ELOOP, "Too many levels of symbolic links"},
+        { EMFILE, "File descriptor value too large"},
+        { EMLINK, "Too many links"},
+        { EMSGSIZE, "Message too large"},
+        { ENAMETOOLONG, "Filename too long"},
+        { ENETDOWN, "Network is down"},
+        { ENETRESET, "Connection aborted by network"},
+        { ENETUNREACH, "Network unreachable"},
+        { ENFILE, "Too many files open in system"},
+        { ENOBUFS, "No buffer space available"},
+        { ENODATA, "No message is available on the STREAM head read queue"},
+        { ENODEV, "No such device"},
+        { ENOENT, "No such file or directory"},
+        { ENOEXEC, "Executable file format error"},
+        { ENOLCK, "No locks available"},
+        { ENOLINK, "Link has been severed"},
+        { ENOMEM, "Not enough space"},
+        { ENOMSG, "No message of the desired type"},
+        { ENOPROTOOPT, "Protocol not available"},
+        { ENOSPC, "No space left on device"},
+        { ENOSR, "No STREAM resources"},
+        { ENOSTR, "Not a STREAM"},
+        { ENOSYS, "Function not supported"},
+        { ENOTCONN, "The socket is not connected"},
+        { ENOTDIR, "Not a directory"},
+        { ENOTEMPTY, "Directory not empty"},
+        { ENOTRECOVERABLE, "State not recoverable"},
+        { ENOTSOCK, "Not a socket"},
+        { ENOTSUP, "Not supported"},
+        { ENOTTY, "Inappropriate I/O control operation"},
+        { ENXIO, "No such device or address"},
+        { EOPNOTSUPP, "Operation not supported on socket"},
+        { EOVERFLOW, "Value too large to be stored in data type"},
+        { EOWNERDEAD, "Previous owner died"},
+        { EPERM, "Operation not permitted"},
+        { EPIPE, "Broken pipe"},
+        { EPROTO, "Protocol error"},
+        { EPROTONOSUPPORT, "Protocol not supported"},
+        { EPROTOTYPE, "Protocol wrong type for socket"},
+        { ERANGE, "Result too large"},
+        { EROFS, "Read-only file system"},
+        { ESPIPE, "Invalid seek"},
+        { ESRCH, "No such process"},
+        { ETIME, "Stream ioctl() timeout"},
+        { ETIMEDOUT, "Connection timed out"},
+        { ETXTBSY, "Text file busy"},
+        { EWOULDBLOCK, "Operation would block"},
+        { EXDEV, "Cross-device link"}, 
+    };
+    //}}}
+
+    auto search = code2str.find(n);
+    if (search == code2str.end()) {
+        if (found)
+            *found = false;
+        return std::string("Error code not found: " + std::to_string(n));
+    } else {
+        if (found)
+            *found = true;
+        return search->second;
+    }
+    //}}}
+}
+
+/*
  * Меняет кодировку. Возвращает истину при успехе.
  */
 bool decodeString(const char* to, const char* from, const string& instr, string& outstr) {
+    //{{{
+    if (errno != 0)
+        throw std::runtime_error("errno is not set to 0");
+
     iconv_t convdescriptor = iconv_open(to, from);
+
+    if (errno != 0) {
+        if (convdescriptor != (iconv_t)(-1))
+                iconv_close(convdescriptor);
+        throw std::runtime_error(make_error_string(errno));
+    }
+
+    printf("convdescriptor %p\n", (void*)convdescriptor);
+
+    // XXX Что за тройка? Как узнать сколько памяти понадобится?
+    const int wide = 3;
+    outstr.resize(instr.size() * wide);
+
+    //const char* in[1] = {
+    char *in[1] = {
+        (char*)instr.data(),
+    };
+    char * out[1] = {
+        outstr.data(),
+    };
+    size_t insize = instr.size();
+    size_t outsize = outstr.size(); // ?
+    //size_t ret = iconv(convdescriptor, (const char*)instr.c_str(), instr.size(), outstr.data(), outstr.size());
+    //size_t ret = iconv(convdescriptor, in, &insize, out, &outsize);
+    size_t ret = iconv(convdescriptor, &in[0], &insize, out, &outsize);
+    printf("ret %lu\n", ret);
     iconv_close(convdescriptor);
-    return false;
+    return ret == 0;
+    //}}}
 }
 
 /*
@@ -209,128 +344,25 @@ void download(const std::string& url) {
 //const uint BLOCK_SIZE = 1024 * 1000;
 const uint BLOCK_SIZE = 8;
 
-/*
- * Возвращает строку с описанием ошибки по номеру. Дополнительный параметр -
- * флаг, указывающий на найдена-ли строка с ошибкой.
- */
-std::string check_error_number(int n, bool *found = nullptr) {
-    //{{{
-
-    //{{{
-    const std::map<int, std::string> code2str = {
-        { E2BIG, "bla" },
-        { E2BIG, "Argument list too long" },
-        { EACCES, "Permission denied "},
-        { EADDRINUSE, "Address in use" },
-        { EADDRNOTAVAIL, "Address not available"},
-        { EAFNOSUPPORT, "Address family not supported"},
-        { EAGAIN, "Resource unavailable, try again"},
-        { EALREADY, "Connection already in progress"},
-        { EBADF, "Bad file descriptor",},
-        { EBADMSG, "Bad message",},
-        { EBUSY, "Device or resource busy"},
-        { ECANCELED, "Operation canceled"},
-        { ECHILD, "No child processes"},
-        { ECONNABORTED, "Connection aborted"},
-        { ECONNREFUSED, "Connection refused"},
-        { ECONNRESET, "Connection reset"},
-        { EDEADLK, "Resource deadlock would occur"},
-        { EDESTADDRREQ, "Destination address required"},
-        { EDOM, "Mathematics argument out of domain of function"},
-        { EEXIST, "File exists"},
-        { EFAULT, "Bad address"},
-        { EFBIG, "File too large"},
-        { EHOSTUNREACH, "Host is unreachable"},
-        { EIDRM, "Identifier removed"},
-        { EILSEQ, "Illegal byte sequence"},
-        { EINPROGRESS, "Operation in progress"},
-        { EINTR, "Interrupted function"},
-        { EINVAL, "Invalid argument"},
-        { EIO, "I/O error"},
-        { EISCONN, "Socket is connected"},
-        { EISDIR, "Is a directory"},
-        { ELOOP, "Too many levels of symbolic links"},
-        { EMFILE, "File descriptor value too large"},
-        { EMLINK, "Too many links"},
-        { EMSGSIZE, "Message too large"},
-        { ENAMETOOLONG, "Filename too long"},
-        { ENETDOWN, "Network is down"},
-        { ENETRESET, "Connection aborted by network"},
-        { ENETUNREACH, "Network unreachable"},
-        { ENFILE, "Too many files open in system"},
-        { ENOBUFS, "No buffer space available"},
-        { ENODATA, "No message is available on the STREAM head read queue"},
-        { ENODEV, "No such device"},
-        { ENOENT, "No such file or directory"},
-        { ENOEXEC, "Executable file format error"},
-        { ENOLCK, "No locks available"},
-        { ENOLINK, "Link has been severed"},
-        { ENOMEM, "Not enough space"},
-        { ENOMSG, "No message of the desired type"},
-        { ENOPROTOOPT, "Protocol not available"},
-        { ENOSPC, "No space left on device"},
-        { ENOSR, "No STREAM resources"},
-        { ENOSTR, "Not a STREAM"},
-        { ENOSYS, "Function not supported"},
-        { ENOTCONN, "The socket is not connected"},
-        { ENOTDIR, "Not a directory"},
-        { ENOTEMPTY, "Directory not empty"},
-        { ENOTRECOVERABLE, "State not recoverable"},
-        { ENOTSOCK, "Not a socket"},
-        { ENOTSUP, "Not supported"},
-        { ENOTTY, "Inappropriate I/O control operation"},
-        { ENXIO, "No such device or address"},
-        { EOPNOTSUPP, "Operation not supported on socket"},
-        { EOVERFLOW, "Value too large to be stored in data type"},
-        { EOWNERDEAD, "Previous owner died"},
-        { EPERM, "Operation not permitted"},
-        { EPIPE, "Broken pipe"},
-        { EPROTO, "Protocol error"},
-        { EPROTONOSUPPORT, "Protocol not supported"},
-        { EPROTOTYPE, "Protocol wrong type for socket"},
-        { ERANGE, "Result too large"},
-        { EROFS, "Read-only file system"},
-        { ESPIPE, "Invalid seek"},
-        { ESRCH, "No such process"},
-        { ETIME, "Stream ioctl() timeout"},
-        { ETIMEDOUT, "Connection timed out"},
-        { ETXTBSY, "Text file busy"},
-        { EWOULDBLOCK, "Operation would block"},
-        { EXDEV, "Cross-device link"}, 
-    };
-    //}}}
-
-    auto search = code2str.find(n);
-    if (search == code2str.end()) {
-        if (found)
-            *found = false;
-        return std::string("Error code not found: " + std::to_string(n));
-    } else {
-        if (found)
-            *found = true;
-        return search->second;
-    }
-    //}}}
-}
-
 void test_decodeString() {
     string in, out;
-    int ret = decodeString("to", "from", in, out);
+    int ret = decodeString("UTF-8", "CP1251", in, out);
     printf("ret %s\n", ret ? "true" : "false");
+    printf("decoded: '%s'\n", out.c_str());
 }
 
 void check_error() {
     double somenumber = std::log(8);
     printf("%f\n", somenumber + 1);
 
-    printf("error str: %s\n", check_error_number(errno).c_str());
+    printf("error str: %s\n", make_error_string(errno).c_str());
 
     std::cout << "errno " << errno << '\n';
     std::cout << "strerror() before nan: " << std::strerror(errno) << '\n';
     double nan = std::log(-1.0);
     printf("nan %f]\n", nan);
     std::cout << "errno after " << errno << '\n';
-    std::cout << "code2str() after " << check_error_number(errno) << '\n';
+    std::cout << "code2str() after " << make_error_string(errno) << '\n';
     if (errno == EDOM) {
         std::cout << "log(-1) failed: " << std::strerror(errno) << '\n';
         std::setlocale(LC_MESSAGES, "de_DE.utf8");
@@ -423,10 +455,11 @@ int main(int argc, const char **argv) {
     } catch (const Error_CouldNotOpen& e) {
         printf("Sorry, could not open file '%s'\n", e.what());
     } catch (const std::overflow_error& e) {
-        // this executes if f() throws std::overflow_error (same type rule)
+        fprintf(stderr, "Main exception handler. Overflow error: %s\n", e.what());
     } catch (const std::runtime_error& e) {
-        // this executes if f() throws std::underflow_error (base class rule)
+        fprintf(stderr, "Main exception handler. Runtine error: %s\n", e.what());
     } catch (const std::exception& e) {
+        fprintf(stderr, "Main exception handler. Exception: %s\n", e.what());
         // this executes if f() throws std::logic_error (base class rule)
     } catch (...) {
         fprintf(stderr, "Main exception handler - unknown error. No implemented exceptions avaible.\n");

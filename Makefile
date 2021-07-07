@@ -13,7 +13,8 @@ EXEPATH=bin
 #clang:
 	#clang read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++
 
-LIBS=-lstdc++ -lm -liconv
+#LIBS=-lstdc++ -lm -liconv
+LIBS=-lstdc++ -lm 
 FLAGS=-pedantic -ggdb -Wall -std=c++17 
 
 default: 
