@@ -104,7 +104,6 @@ std::string make_error_string(int n, bool *found = nullptr) {
 
     //{{{
     const std::map<int, std::string> code2str = {
-        { E2BIG, "bla" },
         { E2BIG, "Argument list too long" },
         { EACCES, "Permission denied "},
         { EADDRINUSE, "Address in use" },
@@ -205,7 +204,7 @@ std::string make_error_string(int n, bool *found = nullptr) {
 bool decodeString(const char* to, const char* from, const string& instr, string& outstr) {
     //{{{
     if (errno != 0)
-        throw std::runtime_error("errno is not set to 0");
+        throw std::runtime_error("errno is not set to 0 before call decodeString()");
 
     iconv_t convdescriptor = iconv_open(to, from);
 
@@ -218,22 +217,42 @@ bool decodeString(const char* to, const char* from, const string& instr, string&
     printf("convdescriptor %p\n", (void*)convdescriptor);
 
     // XXX Что за тройка? Как узнать сколько памяти понадобится?
-    const int wide = 3;
-    outstr.resize(instr.size() * wide);
+    //const int wide = 3;
+    //outstr.resize(instr.size() * wide);
+    outstr.resize(instr.size());
 
     //const char* in[1] = {
     char *in[1] = {
         (char*)instr.data(),
     };
-    char * out[1] = {
-        outstr.data(),
+
+    char tmp[1024 * 1024] = {0, };
+    char *out[1] = {
+        tmp,
     };
+    char *out2[2][64] = {
+        {0, },
+        {0, },
+    };
+    char buf[128] = {0, };
+    char *pbuf = buf;
+    printf("instr '%s'\n", instr.c_str());
     size_t insize = instr.size();
-    size_t outsize = outstr.size(); // ?
-    //size_t ret = iconv(convdescriptor, (const char*)instr.c_str(), instr.size(), outstr.data(), outstr.size());
-    //size_t ret = iconv(convdescriptor, in, &insize, out, &outsize);
-    size_t ret = iconv(convdescriptor, &in[0], &insize, out, &outsize);
-    printf("ret %lu\n", ret);
+    printf("insize %lu\n", insize);
+    size_t outsize = outstr.size(); // как узнать какого размера потребуется буфер?
+
+    //size_t ret = iconv(convdescriptor, in, &insize, (char**)&tmp, &outsize);
+    //size_t ret = iconv(convdescriptor, in, &insize, tmp, &outsize);
+    //size_t ret = iconv(convdescriptor, in, &insize, (char**)out2, &outsize);
+    size_t ret = iconv(convdescriptor, in, &insize, &pbuf, &outsize);
+
+    if (errno != 0)
+        throw std::runtime_error(make_error_string(errno));
+
+    printf("out %s\n", out[0]);
+    printf("insize %lu\n", outsize);
+    printf("outsize %lu\n", outsize);
+    printf("ret value %lu\n", ret);
     iconv_close(convdescriptor);
     return ret == 0;
     //}}}
@@ -345,9 +364,11 @@ void download(const std::string& url) {
 const uint BLOCK_SIZE = 8;
 
 void test_decodeString() {
-    string in, out;
+    string in("входная строка"), out;
+    printf("out '%s'\n", out.c_str());
     int ret = decodeString("UTF-8", "CP1251", in, out);
-    printf("ret %s\n", ret ? "true" : "false");
+    //int ret = 0;
+    printf("decodeString() =  %s\n", ret ? "true" : "false");
     printf("decoded: '%s'\n", out.c_str());
 }
 
