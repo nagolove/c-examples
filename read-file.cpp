@@ -78,6 +78,21 @@ const int sleeptime = 2;
 const int pipeReadDelay = 100;
 //}}}
 
+using std::string;
+
+// Exception handling classes {{{
+class Error_CouldNotOpen: public std::runtime_error {
+//{{{
+public:
+    Error_CouldNotOpen(const string& msg): std::runtime_error(msg) {
+    };
+    ~Error_CouldNotOpen() {
+    }
+};
+//}}}
+//
+//}}}
+
 bool isFileExist(const std::string &fname) {
     return false;
 }
@@ -192,7 +207,12 @@ void download(const std::string& url) {
 //const uint BLOCK_SIZE = 1024 * 1000;
 const uint BLOCK_SIZE = 8;
 
+/*
+ * Возвращает строку с описанием ошибки по номеру. Дополнительный параметр -
+ * флаг, указывающий на найдена-ли строка с ошибкой.
+ */
 std::string check_error_number(int n, bool *found = nullptr) {
+    //{{{
 
     //{{{
     const std::map<int, std::string> code2str = {
@@ -288,6 +308,7 @@ std::string check_error_number(int n, bool *found = nullptr) {
             *found = true;
         return search->second;
     }
+    //}}}
 }
 
 void check_error() {
@@ -315,87 +336,30 @@ void check_error() {
 
 // TODO проверить ошибки считывания последнего кусочка файла
 // Считывает содержимое файла в память и возвращает строковый объекта. В случае
-// ошибки бросает исключение std::exception
+// ошибки бросает исключение Error_CouldNotOpen
+
 std::string read2mem(const std::string& fname) {
-
-    PRINT_ERROR_CODE;
-    check_error_number(errno);
-
+    //{{{
     size_t ret = 0;
     FILE *file = fopen(fname.c_str(), "r");
-
     if (!file)
-        throw std::runtime_error("Could not open file " + fname);
-
-    check_error_number(errno);
-
-    char buf[BLOCK_SIZE + 1] = {0, };
-    //std::string buf, resbuf;
-    std::string resbuf;
-    //buf.reserve(BLOCK_SIZE);
-    //buf.resize(BLOCK_SIZE);
-
-    check_error_number(errno);
-
-    //if (file == nullptr || ferror(file) != 0) {
-    printf("file %p\n", (void*)file);
-    if (file == nullptr && ferror(file) != 0) {
-        fclose(file);
-        throw std::runtime_error("Could not read file " + fname);
-    }
-
-    check_error_number(errno);
-
+        throw Error_CouldNotOpen(fname);
+    std::string buf, resbuf;
+    buf.reserve(BLOCK_SIZE);
+    buf.resize(BLOCK_SIZE);
     // TODO добавить проверку на считывание маленького куска
-    ret = fread(buf, 1, BLOCK_SIZE, file);
-
-    check_error_number(errno);
-
-    int i = 0;
-
-    fseek(file, 0, SEEK_END);
-    auto fullsize = ftell(file);
-    printf("fullsize: %ld\n", fullsize);
-    fseek(file, 0, SEEK_SET);
-
+    ret = fread(buf.data(), 1, BLOCK_SIZE, file);
     while (ret > 0) {
-        printf("i %d\n", i++);
-        //std::string oldbuf(buf);
-        printf("1.\n");
         resbuf.append(buf);
-        printf("2.\n");
-        ret = fread(buf, 1, BLOCK_SIZE, file);
-        printf("3.\n");
-
-        //auto size = ftell(file);
-        //printf("size %d\n", size);
-
-        check_error_number(errno);
-        printf("4.\n");
-
-        //if (ret > 0)
-            //buf.resize(ret);
-
-        printf("5.\n");
-        //printf("buf '%s', ret = %lu\n", buf.c_str(), ret);
-        
-        check_error_number(errno);
-        printf("6.\n");
+        ret = fread(buf.data(), 1, BLOCK_SIZE, file);
+        if (ret > 0)
+            buf.resize(ret);
     }
-
-    printf("6.\n");
-    check_error_number(errno);
-
     if (ferror(file) != 0) {
-        check_error_number(errno);
         fclose(file);
         throw std::runtime_error("ferror() got non zero on " + fname);
     }
-
-    check_error_number(errno);
     fclose(file);
-    check_error_number(errno);
-
     return resbuf;
 }
 
@@ -409,8 +373,11 @@ void test_read2mem() {
     //data = read2mem("t1.txt");
     //printf("data '%s'\n", data.c_str());
 
-    data = read2mem("t3.txt");
-    printf("data '%s'\n", data.c_str());
+    data = read2mem("reference.txt");
+    FILE *out = fopen("out.txt", "w");
+    fwrite(data.c_str(), data.size(), 1, out);
+    fclose(out);
+    //printf("data '%s'\n", data.c_str());
 
     //data = read2mem("data-min.txt");
     //printf("data '%s'\n", data.c_str());
@@ -449,12 +416,14 @@ void decodeCMD(int argc, const char **argv) {
 int main(int argc, const char **argv) {
     try {
 
-        //decodeCMD(argc, argv);
+        decodeCMD(argc, argv);
 
         test_read2mem();
         //test_passThroughPipe();
         //test_download();
 
+    } catch (const Error_CouldNotOpen& e) {
+        printf("Sorry, could not open file '%s'\n", e.what());
     } catch (const std::overflow_error& e) {
         // this executes if f() throws std::overflow_error (same type rule)
     } catch (const std::runtime_error& e) {
@@ -462,7 +431,7 @@ int main(int argc, const char **argv) {
     } catch (const std::exception& e) {
         // this executes if f() throws std::logic_error (base class rule)
     } catch (...) {
-        fprintf(stderr, "Unknown error. No implemented exceptions avaible.");
+        fprintf(stderr, "Main exception handler - unknown error. No implemented exceptions avaible.\n");
     }
     //*/
     return EXIT_SUCCESS;
