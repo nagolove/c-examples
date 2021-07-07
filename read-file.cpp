@@ -155,7 +155,7 @@ void download(const std::string& url) {
     //std::vector<char> buf;
     std::string buf;
     buf.reserve(BUF_SIZE);
-    printf("file %p\n", (void*)file);
+    //printf("file %p\n", (void*)file);
     //auto filesize = ftell(file);
 
     std::fstream outfile(OUT_FNAME, outfile.binary | outfile.out | outfile.trunc);
@@ -351,6 +351,7 @@ std::string read2mem(const std::string& fname) {
     ret = fread(buf.data(), 1, BLOCK_SIZE, file);
     while (ret > 0) {
         resbuf.append(buf);
+        buf.resize(BLOCK_SIZE);
         ret = fread(buf.data(), 1, BLOCK_SIZE, file);
         if (ret > 0)
             buf.resize(ret);
@@ -366,9 +367,7 @@ std::string read2mem(const std::string& fname) {
 #undef PRINT_ERROR_CODE
 
 void test_read2mem() {
-
-    //check_error();
-
+    //{{{
     std::string data;
     //data = read2mem("t1.txt");
     //printf("data '%s'\n", data.c_str());
@@ -377,24 +376,13 @@ void test_read2mem() {
     FILE *out = fopen("out.txt", "w");
     fwrite(data.c_str(), data.size(), 1, out);
     fclose(out);
-    //printf("data '%s'\n", data.c_str());
-
-    //data = read2mem("data-min.txt");
-    //printf("data '%s'\n", data.c_str());
-
-    // FIXME
-    // этот пример не работает
-    //data = read2mem("simpledata.txt");
-    //read2mem("simpledata.txt");
-    //data = read2mem("simpledata-half.txt");
-    //printf("data '%s'\n", data.c_str());
-
-    // */
+    //}}}
 }
 
 void test_passThroughPipe() {
     //TODO put some code here ..
-    //std::string buf;
+    std::string buf = read2mem("reference.txt");
+    printf("%s", buf.c_str());
     //auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
 }
 
@@ -404,12 +392,12 @@ void test_download() {
 
 // какие команды распознавать?
 void decodeCMD(int argc, const char **argv) {
-    printf("argc %d\n", argc);
+    //printf("argc %d\n", argc);
     //for (int i = argc - 0; i >= 0; --i) {
     //for (int i = argc - 0; i >= 0; --i) {
     for (int i = 0; i < argc; i++) {
-        printf("i = %d, str = %s\n", i, argv[i]);
-        printf("%s\n", argv[i]);
+        //printf("i = %d, str = %s\n", i, argv[i]);
+        //printf("%s\n", argv[i]);
     }
 }
 
@@ -419,7 +407,7 @@ int main(int argc, const char **argv) {
         decodeCMD(argc, argv);
 
         test_read2mem();
-        //test_passThroughPipe();
+        test_passThroughPipe();
         //test_download();
 
     } catch (const Error_CouldNotOpen& e) {
