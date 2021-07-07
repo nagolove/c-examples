@@ -93,17 +93,6 @@ public:
 //
 //}}}
 
-bool isFileExist(const std::string &fname) {
-    return false;
-}
-
-/*
-
-FILE *stream = fopen("somefname.txt", "r");
-int fd = fileno(stream);
-
-*/
-
 /*
  * Пропускает databuf через команду используя трубу. Возвращает вывод команды в
  * виде строки.
@@ -383,7 +372,7 @@ void test_passThroughPipe() {
     //TODO put some code here ..
     std::string buf = read2mem("reference.txt");
     printf("%s", buf.c_str());
-    //auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
+    auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
 }
 
 void test_download() {
