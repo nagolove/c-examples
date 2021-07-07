@@ -71,6 +71,8 @@
 #include <sys/stat.h>
 //}}}
 
+#include <iconv.h>
+
 // Constants {{{
 const uint32_t BUF_SIZE = 1024;
 const char *OUT_FNAME = "data.txt";
@@ -94,14 +96,25 @@ public:
 //}}}
 
 /*
+ * Меняет кодировку. Возвращает истину при успехе.
+ */
+bool decodeString(const char* to, const char* from, const string& instr, string& outstr) {
+    iconv_t convdescriptor = iconv_open(to, from);
+    iconv_close(convdescriptor);
+    return false;
+}
+
+/*
  * Пропускает databuf через команду используя трубу. Возвращает вывод команды в
  * виде строки.
  */
-// TODO в случае ошибки должен кидать исключение std::runtime_error
+// TODO в случае ошибки должен кидать исключение Error_CouldNotOpen
 std::string passThroughPipe(const std::string& command, const std::string& databuf) {
     //{{{
 
     FILE *file = popen(command.c_str(), "wr");
+    if (!file)
+        throw Error_CouldNotOpen(command);
 
     //TODO проверить на неудачное выполнение команды
     std::string buf;
@@ -300,6 +313,12 @@ std::string check_error_number(int n, bool *found = nullptr) {
     //}}}
 }
 
+void test_decodeString() {
+    string in, out;
+    int ret = decodeString("to", "from", in, out);
+    printf("ret %s\n", ret ? "true" : "false");
+}
+
 void check_error() {
     double somenumber = std::log(8);
     printf("%f\n", somenumber + 1);
@@ -371,8 +390,9 @@ void test_read2mem() {
 void test_passThroughPipe() {
     //TODO put some code here ..
     std::string buf = read2mem("reference.txt");
-    printf("%s", buf.c_str());
+    //printf("%s", buf.c_str());
     auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
+    printf("%s\n", utf8str.c_str());
 }
 
 void test_download() {
@@ -395,8 +415,9 @@ int main(int argc, const char **argv) {
 
         decodeCMD(argc, argv);
 
-        test_read2mem();
-        test_passThroughPipe();
+        //test_read2mem();
+        //test_passThroughPipe();
+        test_decodeString();
         //test_download();
 
     } catch (const Error_CouldNotOpen& e) {

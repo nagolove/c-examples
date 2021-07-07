@@ -13,8 +13,12 @@ EXEPATH=bin
 #clang:
 	#clang read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++
 
+LIBS=-lstdc++ -lm -liconv
+FLAGS=-pedantic -ggdb -Wall -std=c++17 
+
 default: 
-	gcc read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++ -pedantic
+	gcc read-file.cpp -o $(EXEPATH)/readfile ${LIBS} ${FLAGS}
+	#gcc read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++ -pedantic
 	#strip readfile
 
 #program.o: program.c $(HEADERS)
