@@ -10,8 +10,11 @@ EXEPATH=bin
 	#${CC} ${FLAGS} -c inc.c
 	#${CC} ${FLAGS} -o run run.o inc.o
 
+#clang:
+	#clang read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++
+
 default: 
-	gcc read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++
+	gcc read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++ -pedantic
 	#strip readfile
 
 #program.o: program.c $(HEADERS)

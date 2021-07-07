@@ -1,3 +1,4 @@
+// Standard library includes {{{
 #include <algorithm>
 #include <any>
 #include <array>
@@ -62,15 +63,20 @@
 #include <utility>
 #include <variant>
 #include <vector>
+//}}}
 //#include <bits/stdc++.h>
 
+// Unix includes {{{
 #include <unistd.h>
 #include <sys/stat.h>
+//}}}
 
+// Constants {{{
 const uint32_t BUF_SIZE = 1024;
 const char *OUT_FNAME = "data.txt";
 const int sleeptime = 2;
 const int pipeReadDelay = 100;
+//}}}
 
 bool isFileExist(const std::string &fname) {
     return false;
@@ -87,8 +93,9 @@ int fd = fileno(stream);
  * Пропускает databuf через команду используя трубу. Возвращает вывод команды в
  * виде строки.
  */
-// TODO в случае ошибки должен кидать исключение
+// TODO в случае ошибки должен кидать исключение std::runtime_error
 std::string passThroughPipe(const std::string& command, const std::string& databuf) {
+    //{{{
 
     FILE *file = popen(command.c_str(), "wr");
 
@@ -121,17 +128,19 @@ std::string passThroughPipe(const std::string& command, const std::string& datab
 
     pclose(file);
     return "";
+    //}}}
 }
 
 /*
  * Скачивает текстовый файл из интернета и возвращает в виде строки символов.
  */
 void download(const std::string& url) {
+    // {{{
     FILE *file = popen(url.c_str(), "r");
     //std::vector<char> buf;
     std::string buf;
     buf.reserve(BUF_SIZE);
-    printf("file %p\n", file);
+    printf("file %p\n", (void*)file);
     //auto filesize = ftell(file);
 
     std::fstream outfile(OUT_FNAME, outfile.binary | outfile.out | outfile.trunc);
@@ -177,6 +186,7 @@ void download(const std::string& url) {
     //printf("filesize %d\n", (int)filesize);
     
     pclose(file);
+    //}}}
 }
 
 //const uint BLOCK_SIZE = 1024 * 1000;
@@ -184,6 +194,7 @@ const uint BLOCK_SIZE = 8;
 
 std::string check_error_number(int n, bool *found = nullptr) {
 
+    //{{{
     const std::map<int, std::string> code2str = {
         { E2BIG, "bla" },
         { E2BIG, "Argument list too long" },
@@ -265,6 +276,7 @@ std::string check_error_number(int n, bool *found = nullptr) {
         { EWOULDBLOCK, "Operation would block"},
         { EXDEV, "Cross-device link"}, 
     };
+    //}}}
 
     auto search = code2str.find(n);
     if (search == code2str.end()) {
@@ -312,6 +324,9 @@ std::string read2mem(const std::string& fname) {
     size_t ret = 0;
     FILE *file = fopen(fname.c_str(), "r");
 
+    if (!file)
+        throw std::runtime_error("Could not open file " + fname);
+
     check_error_number(errno);
 
     char buf[BLOCK_SIZE + 1] = {0, };
@@ -323,7 +338,7 @@ std::string read2mem(const std::string& fname) {
     check_error_number(errno);
 
     //if (file == nullptr || ferror(file) != 0) {
-    printf("file %p\n", file);
+    printf("file %p\n", (void*)file);
     if (file == nullptr && ferror(file) != 0) {
         fclose(file);
         throw std::runtime_error("Could not read file " + fname);
@@ -434,7 +449,7 @@ void decodeCMD(int argc, const char **argv) {
 int main(int argc, const char **argv) {
     try {
 
-        decodeCMD(argc, argv);
+        //decodeCMD(argc, argv);
 
         test_read2mem();
         //test_passThroughPipe();
