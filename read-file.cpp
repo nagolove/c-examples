@@ -75,16 +75,18 @@
 #include <unistd.h>
 
 void handler(int sig) {
-  void *array[10];
-  size_t size;
+    //{{{
+    void *array[10];
+    size_t size;
 
-  // get void*'s for all entries on the stack
-  size = backtrace(array, 10);
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
 
-  // print out all the frames to stderr
-  fprintf(stderr, "Error: signal %d:\n", sig);
-  backtrace_symbols_fd(array, size, STDERR_FILENO);
-  exit(1);
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, STDERR_FILENO);
+    exit(1);
+    //}}}
 }
 
 // Unix includes {{{
@@ -104,6 +106,16 @@ const int pipeReadDelay = 100;
 using std::string;
 
 // Exception handling classes {{{
+class Error_CouldNotDecode: public std::runtime_error {
+// {{{
+public:
+    Error_CouldNotDecode(const string& msg): std::runtime_error(msg) {
+    };
+    ~Error_CouldNotDecode() {
+    };
+};
+//}}}
+
 class Error_CouldNotOpen: public std::runtime_error {
 //{{{
 public:
@@ -120,11 +132,11 @@ public:
  * Возвращает строку с описанием ошибки по номеру. Дополнительный параметр -
  * флаг, указывающий на найдена-ли строка с ошибкой.
  */
-std::string make_error_string(int n, bool *found = nullptr) {
+string make_error_string(int n, bool *found = nullptr) {
     //{{{
 
     //{{{
-    const std::map<int, std::string> code2str = {
+    const std::map<int, string> code2str = {
         { E2BIG, "Argument list too long" },
         { EACCES, "Permission denied "},
         { EADDRINUSE, "Address in use" },
@@ -210,7 +222,7 @@ std::string make_error_string(int n, bool *found = nullptr) {
     if (search == code2str.end()) {
         if (found)
             *found = false;
-        return std::string("Error code not found: " + std::to_string(n));
+        return string("Error code not found: " + std::to_string(n));
     } else {
         if (found)
             *found = true;
@@ -258,7 +270,7 @@ bool decodeString(const char* to, const char* from, const string& instr, string&
  * виде строки.
  */
 // TODO в случае ошибки должен кидать исключение Error_CouldNotOpen
-std::string passThroughPipe(const std::string& command, const std::string& databuf) {
+string passThroughPipe(const string& command, const string& databuf) {
     //{{{
 
     FILE *file = popen(command.c_str(), "wr");
@@ -266,11 +278,11 @@ std::string passThroughPipe(const std::string& command, const std::string& datab
         throw Error_CouldNotOpen(command);
 
     //TODO проверить на неудачное выполнение команды
-    std::string buf;
+    string buf;
     buf.reserve(BUF_SIZE);
 
     size_t ret = 0;
-    std::string internalBuf;
+    string internalBuf;
 
     usleep(pipeReadDelay);
     ret = fread(buf.data(), 1, BUF_SIZE, file);
@@ -300,27 +312,17 @@ std::string passThroughPipe(const std::string& command, const std::string& datab
 /*
  * Скачивает текстовый файл из интернета и возвращает в виде строки символов.
  */
-void download(const std::string& url) {
+string download(const string& url) {
     // {{{
-    FILE *file = popen(url.c_str(), "r");
-    //std::vector<char> buf;
-    std::string buf;
+    string cmd = "curl " + url;
+    FILE *pipe = popen(cmd.c_str(), "r");
+    string buf, retbuf;
     buf.reserve(BUF_SIZE);
-    //printf("file %p\n", (void*)file);
-    //auto filesize = ftell(file);
-
-    std::fstream outfile(OUT_FNAME, outfile.binary | outfile.out | outfile.trunc);
-    if (!outfile.is_open()) {
-        std::string msg = "Could not open ";
-        msg += OUT_FNAME;
-        msg += " file.";
-        throw std::runtime_error(msg);
-    }
 
     size_t ret = 0;
 
     usleep(sleeptime);
-    ret = fread(buf.data(), 1, BUF_SIZE, file);
+    ret = fread(buf.data(), 1, BUF_SIZE, pipe);
 
     // Цикл чтения и ожидания
     //do {
@@ -328,19 +330,25 @@ void download(const std::string& url) {
         //printf("ret %d\n", ret);
     //} while (ret != 0);
     while (ret != 0) {
-        outfile.write(&buf[0], BUF_SIZE);
+        //outfile.write(&buf[0], BUF_SIZE);
         usleep(sleeptime);
-        ret = fread(buf.data(), BUF_SIZE, 1, file);
+        ret = fread(buf.data(), BUF_SIZE, 1, pipe);
         //printf("ret %d\n", ret);
 
-        auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
+        //auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
+        string utf8str;
+        //bool ok = decodeString("UTF-8", "CP1251", buf, utf8str);
+        bool ok = decodeString("utf-8", "cp1251", buf, utf8str);
+        if (!ok) {
+            throw std
+        }
         //outfile.write(&buf[0], BUF_SIZE);
-        outfile.write(&utf8str[0], utf8str.size());
+        //outfile.write(&utf8str[0], utf8str.size());
     }
 
     auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
     //outfile.write(&buf[0], BUF_SIZE);
-    outfile.write(&utf8str[0], utf8str.size());
+    //outfile.write(&utf8str[0], utf8str.size());
 
     outfile << std::endl;
 
@@ -351,7 +359,8 @@ void download(const std::string& url) {
     // XXX нет проверки на переполнение знакового значения
     //printf("filesize %d\n", (int)filesize);
     
-    pclose(file);
+    pclose(pipe);
+    return retbuf;
     //}}}
 }
 
@@ -361,13 +370,13 @@ const uint BLOCK_SIZE = 8;
 // TODO проверить ошибки считывания последнего кусочка файла
 // Считывает содержимое файла в память и возвращает строковый объекта. В случае
 // ошибки бросает исключение Error_CouldNotOpen
-std::string read2mem(const std::string& fname) {
+string read2mem(const string& fname) {
     //{{{
     size_t ret = 0;
     FILE *file = fopen(fname.c_str(), "r");
     if (!file)
         throw Error_CouldNotOpen(fname);
-    std::string buf, resbuf;
+    string buf, resbuf;
     buf.reserve(BLOCK_SIZE);
     buf.resize(BLOCK_SIZE);
     // TODO добавить проверку на считывание маленького куска
@@ -392,16 +401,6 @@ void test_decodeString() {
     string data, decoded;
     data = read2mem("example1.txt");
     
-    /*
-     *{
-     *    FILE *f = fopen("example1.txt.out", "w");
-     *    //std::cout << in << std::endl;
-     *    int retcode = fwrite(out.c_str(), out.size(), 1, f);
-     *    printf("retcode %d\n", retcode);
-     *    fclose(f);
-     *}
-     */
-
     bool ret = decodeString("UTF-8", "CP1251", data, decoded);
     printf("decodeString() =  %s\n", ret ? "true" : "false");
     //printf("decoded: '%s'\n", decoded.c_str());
@@ -438,7 +437,7 @@ void check_error() {
 
 void test_read2mem() {
     //{{{
-    std::string data;
+    string data;
     //data = read2mem("t1.txt");
     //printf("data '%s'\n", data.c_str());
 
@@ -451,14 +450,14 @@ void test_read2mem() {
 
 void test_passThroughPipe() {
     //TODO put some code here ..
-    std::string buf = read2mem("reference.txt");
+    string buf = read2mem("reference.txt");
     //printf("%s", buf.c_str());
     auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
     printf("%s\n", utf8str.c_str());
 }
 
 void test_download() {
-    //download("curl http://az.lib.ru/f/fet_a_a/text_0042.shtml");
+    download("http://az.lib.ru/f/fet_a_a/text_0042.shtml");
 }
 
 // какие команды распознавать?
@@ -480,8 +479,8 @@ int main(int argc, const char **argv) {
 
         //test_read2mem();
         //test_passThroughPipe();
-        test_decodeString();
-        //test_download();
+        //test_decodeString();
+        test_download();
 
     } catch (const Error_CouldNotOpen& e) {
         printf("Sorry, could not open file '%s'\n", e.what());
