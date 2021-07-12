@@ -97,7 +97,8 @@ void handler(int sig) {
 #include <iconv.h>
 
 // Constants {{{
-const uint32_t BUF_SIZE = 1024;
+//const uint32_t BUF_SIZE = 1024;
+const uint32_t BUF_SIZE = 8;
 const char *OUT_FNAME = "data.txt";
 const int sleeptime = 2;
 const int pipeReadDelay = 100;
@@ -234,7 +235,12 @@ string make_error_string(int n, bool *found = nullptr) {
 /*
  * Меняет кодировку. Возвращает истину при успехе.
  */
-bool decodeString(const char* to, const char* from, const string& instr, string& outstr) {
+bool decodeString(
+        const char* to, 
+        const char* from, 
+        const string& instr, 
+        string& outstr
+) {
     //{{{
     if (errno != 0)
         throw std::runtime_error("errno is not set to 0 before call decodeString()");
@@ -324,41 +330,27 @@ string download(const string& url) {
     usleep(sleeptime);
     ret = fread(buf.data(), 1, BUF_SIZE, pipe);
 
-    // Цикл чтения и ожидания
-    //do {
-        //outfile.write(&buf[0], BUF_SIZE);
-        //printf("ret %d\n", ret);
-    //} while (ret != 0);
+    // TODO вызов curl'а может дать очень большой файл, предусмотреть ограничение
     while (ret != 0) {
-        //outfile.write(&buf[0], BUF_SIZE);
         usleep(sleeptime);
         ret = fread(buf.data(), BUF_SIZE, 1, pipe);
         //printf("ret %d\n", ret);
 
-        //auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
         string utf8str;
+        printf("buf: %s\n", buf.c_str());
         //bool ok = decodeString("UTF-8", "CP1251", buf, utf8str);
-        bool ok = decodeString("utf-8", "cp1251", buf, utf8str);
+        const char *fromEnc = "utf8", *toEnc = "cp1251";
+        bool ok = decodeString(fromEnc, toEnc, buf, utf8str);
         if (!ok) {
-            throw std
+            throw Error_CouldNotDecode(string("Error in encoding from ") + fromEnc + 
+                    " to " + toEnc); 
         }
+        printf("utf8str = %s\n", utf8str.c_str());
+        retbuf.append(utf8str);
         //outfile.write(&buf[0], BUF_SIZE);
         //outfile.write(&utf8str[0], utf8str.size());
     }
 
-    auto utf8str = passThroughPipe("iconv -f \"windows-1251\" -t \"utf-8\" .", buf);
-    //outfile.write(&buf[0], BUF_SIZE);
-    //outfile.write(&utf8str[0], utf8str.size());
-
-    outfile << std::endl;
-
-    //char simplebuf[1024] = {0, };
-    //ret = fread(simplebuf, BUF_SIZE, 1, file);
-    //printf("simplebuf '%s'\n", simplebuf);
-
-    // XXX нет проверки на переполнение знакового значения
-    //printf("filesize %d\n", (int)filesize);
-    
     pclose(pipe);
     return retbuf;
     //}}}
@@ -457,7 +449,9 @@ void test_passThroughPipe() {
 }
 
 void test_download() {
-    download("http://az.lib.ru/f/fet_a_a/text_0042.shtml");
+    string text = download("http://az.lib.ru/f/fet_a_a/text_0042.shtml");
+    printf("text '%s'\n", text.c_str());
+    //std::cout << text << std::endl;
 }
 
 // какие команды распознавать?

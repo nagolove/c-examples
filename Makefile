@@ -18,6 +18,8 @@ LIBS=-lstdc++ -lm
 FLAGS=-pedantic -ggdb -Wall -std=c++17 
 #FLAGS=-pedantic -ggdb -Wall -std=c++17 -fpermissive
 
+#clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o main.wasm main.c
+
 default: 
 	gcc read-file.cpp -o $(EXEPATH)/readfile ${LIBS} ${FLAGS}
 	#gcc read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++ -pedantic
