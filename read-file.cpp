@@ -1,3 +1,5 @@
+// vim: fdm=marker
+// vim: set colorcolumn=85
 // Standard library includes {{{
 #include <algorithm>
 #include <any>
