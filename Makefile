@@ -16,6 +16,7 @@ EXEPATH=bin
 #LIBS=-lstdc++ -lm -liconv
 LIBS=-lstdc++ -lm 
 FLAGS=-pedantic -ggdb -Wall -std=c++17 
+#FLAGS=-pedantic -ggdb -Wall -std=c++17 -fpermissive
 
 default: 
 	gcc read-file.cpp -o $(EXEPATH)/readfile ${LIBS} ${FLAGS}

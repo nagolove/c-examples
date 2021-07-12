@@ -235,45 +235,19 @@ bool decodeString(const char* to, const char* from, const string& instr, string&
         throw std::runtime_error(make_error_string(errno));
     }
 
-    printf("convdescriptor %p\n", (void*)convdescriptor);
-
-    // XXX Что за тройка? Как узнать сколько памяти понадобится?
-    //const int wide = 3;
-    //outstr.resize(instr.size() * wide);
-    outstr.resize(instr.size());
-
-    //const char* in[1] = {
-    char *in[1] = {
-        (char*)instr.data(),
-    };
-
-    char tmp[1024 * 1024] = {0, };
-    char *out[1] = {
-        tmp,
-    };
-    char *out2[2][64] = {
-        {0, },
-        {0, },
-    };
-    char buf[128] = {0, };
-    char *pbuf = buf;
-    printf("instr '%s'\n", instr.c_str());
+    const int wide = 4; // памяти с запасом
     size_t insize = instr.size();
-    printf("insize %lu\n", insize);
-    size_t outsize = outstr.size(); // как узнать какого размера потребуется буфер?
+    char *pinstr = (char*)&instr[0];
+    char *pbuf = (char*)&outstr[0];
+    size_t outsize = outstr.size();
 
-    //size_t ret = iconv(convdescriptor, in, &insize, (char**)&tmp, &outsize);
-    //size_t ret = iconv(convdescriptor, in, &insize, tmp, &outsize);
-    //size_t ret = iconv(convdescriptor, in, &insize, (char**)out2, &outsize);
-    size_t ret = iconv(convdescriptor, in, &insize, &pbuf, &outsize);
+    outstr.resize(instr.size() * wide);
+    size_t ret = iconv(convdescriptor, &pinstr, &insize, &pbuf, &outsize);
+    outstr.resize(outsize);
 
     if (errno != 0)
         throw std::runtime_error(make_error_string(errno));
 
-    printf("out %s\n", out[0]);
-    printf("insize %lu\n", outsize);
-    printf("outsize %lu\n", outsize);
-    printf("ret value %lu\n", ret);
     iconv_close(convdescriptor);
     return ret == 0;
     //}}}
@@ -384,42 +358,9 @@ void download(const std::string& url) {
 //const uint BLOCK_SIZE = 1024 * 1000;
 const uint BLOCK_SIZE = 8;
 
-void test_decodeString() {
-    string in("входная строка"), out;
-    printf("out '%s'\n", out.c_str());
-    int ret = decodeString("UTF-8", "CP1251", in, out);
-    //int ret = 0;
-    printf("decodeString() =  %s\n", ret ? "true" : "false");
-    printf("decoded: '%s'\n", out.c_str());
-}
-
-void check_error() {
-    double somenumber = std::log(8);
-    printf("%f\n", somenumber + 1);
-
-    printf("error str: %s\n", make_error_string(errno).c_str());
-
-    std::cout << "errno " << errno << '\n';
-    std::cout << "strerror() before nan: " << std::strerror(errno) << '\n';
-    double nan = std::log(-1.0);
-    printf("nan %f]\n", nan);
-    std::cout << "errno after " << errno << '\n';
-    std::cout << "code2str() after " << make_error_string(errno) << '\n';
-    if (errno == EDOM) {
-        std::cout << "log(-1) failed: " << std::strerror(errno) << '\n';
-        std::setlocale(LC_MESSAGES, "de_DE.utf8");
-        std::cout << "In German: " << std::strerror(errno) << '\n';
-        std::setlocale(LC_MESSAGES, "ru_RU.utf8");
-        std::cout << "In Russian: " << std::strerror(errno) << '\n';
-    }
-}
-
-#define PRINT_ERROR_CODE    (printf("%s\n", check_error_number(errno).c_str()))
-
 // TODO проверить ошибки считывания последнего кусочка файла
 // Считывает содержимое файла в память и возвращает строковый объекта. В случае
 // ошибки бросает исключение Error_CouldNotOpen
-
 std::string read2mem(const std::string& fname) {
     //{{{
     size_t ret = 0;
@@ -446,7 +387,54 @@ std::string read2mem(const std::string& fname) {
     return resbuf;
 }
 
-#undef PRINT_ERROR_CODE
+void test_decodeString() {
+    //string in("входная строка"), out;
+    string data, decoded;
+    data = read2mem("example1.txt");
+    
+    /*
+     *{
+     *    FILE *f = fopen("example1.txt.out", "w");
+     *    //std::cout << in << std::endl;
+     *    int retcode = fwrite(out.c_str(), out.size(), 1, f);
+     *    printf("retcode %d\n", retcode);
+     *    fclose(f);
+     *}
+     */
+
+    bool ret = decodeString("UTF-8", "CP1251", data, decoded);
+    printf("decodeString() =  %s\n", ret ? "true" : "false");
+    //printf("decoded: '%s'\n", decoded.c_str());
+
+    {
+        FILE *f = fopen("example1.txt.out", "w");
+        //std::cout << in << std::endl;
+        int retcode = fwrite(decoded.c_str(), decoded.size(), 1, f);
+        printf("retcode %d\n", retcode);
+        fclose(f);
+    }
+}
+
+void check_error() {
+    double somenumber = std::log(8);
+    printf("%f\n", somenumber + 1);
+
+    printf("error str: %s\n", make_error_string(errno).c_str());
+
+    std::cout << "errno " << errno << '\n';
+    std::cout << "strerror() before nan: " << std::strerror(errno) << '\n';
+    double nan = std::log(-1.0);
+    printf("nan %f]\n", nan);
+    std::cout << "errno after " << errno << '\n';
+    std::cout << "code2str() after " << make_error_string(errno) << '\n';
+    if (errno == EDOM) {
+        std::cout << "log(-1) failed: " << std::strerror(errno) << '\n';
+        std::setlocale(LC_MESSAGES, "de_DE.utf8");
+        std::cout << "In German: " << std::strerror(errno) << '\n';
+        std::setlocale(LC_MESSAGES, "ru_RU.utf8");
+        std::cout << "In Russian: " << std::strerror(errno) << '\n';
+    }
+}
 
 void test_read2mem() {
     //{{{
