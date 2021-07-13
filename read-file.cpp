@@ -337,7 +337,7 @@ string download(const string& url) {
         //printf("ret %d\n", ret);
 
         string utf8str;
-        printf("buf: %s\n", buf.c_str());
+        printf("buf: '%s'\n", buf.c_str());
         //bool ok = decodeString("UTF-8", "CP1251", buf, utf8str);
         const char *fromEnc = "utf8", *toEnc = "cp1251";
         bool ok = decodeString(fromEnc, toEnc, buf, utf8str);
@@ -345,7 +345,7 @@ string download(const string& url) {
             throw Error_CouldNotDecode(string("Error in encoding from ") + fromEnc + 
                     " to " + toEnc); 
         }
-        printf("utf8str = %s\n", utf8str.c_str());
+        printf("utf8str = '%s'\n", utf8str.c_str());
         retbuf.append(utf8str);
         //outfile.write(&buf[0], BUF_SIZE);
         //outfile.write(&utf8str[0], utf8str.size());
