@@ -262,6 +262,7 @@ bool decodeString(
     outstr.resize(instr.size() * wide);
     size_t ret = iconv(convdescriptor, &pinstr, &insize, &pbuf, &outsize);
     outstr.resize(outsize);
+    outstr.shrink_to_fit();
 
     if (errno != 0)
         throw std::runtime_error(make_error_string(errno));
