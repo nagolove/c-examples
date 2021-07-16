@@ -42,7 +42,7 @@ void parseLine2(const string &inputline, StringVectorPtr &retArray) {
 }
 
 void parseLine(const string &inputline, StringVectorPtr &retArray) {
-    cerr << "I'an parseLine" << endl;
+    cerr << "I'am parseLine" << endl;
     std::regex rgx("\\s+");
     //std::regex rgx("(\\d+)");
     std::sregex_token_iterator iter(inputline.begin(), inputline.end(), rgx, -1);
@@ -143,7 +143,7 @@ int main() {
     } catch(const runtime_error &e) {
         cerr << "catched: " << e.what() << endl;
     } catch(...) {
-        cerr << "... exceptin." << endl;
+        cerr << "... exception." << endl;
     }    
     
             
