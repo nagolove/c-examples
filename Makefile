@@ -24,6 +24,7 @@ default:
 	gcc read-file.cpp -o $(EXEPATH)/readfile ${LIBS} ${FLAGS}
 	gcc variable-sized-arrays.cpp -o $(EXEPATH)/variable-sized-array ${LIBS} ${FLAGS}
 	gcc string_view.cpp -o $(EXEPATH)/string_view ${LIBS} ${FLAGS}
+	gcc lower_bound.cpp -o $(EXEPATH)/lower_bound ${LIBS} ${FLAGS}
 	#gcc read-file.cpp -o $(EXEPATH)/readfile -ggdb -Wall -std=c++17 -lm -lstdc++ -pedantic
 	#strip readfile
 
